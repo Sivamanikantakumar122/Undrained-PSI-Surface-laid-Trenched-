@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 # --- IMPORT BACKENDS ---
 # These files must exist in your repository with these exact names
@@ -242,6 +242,7 @@ elif analysis_mode == "Trenched Pipeline":
 # --- FOOTER ---
 st.markdown("---")
 st.markdown("**Developed by Sivamanikanta Kumar** | Geotechnical Engineer")
+
 
 
 
