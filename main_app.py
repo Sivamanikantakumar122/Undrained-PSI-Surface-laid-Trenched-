@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-
 # --- IMPORT BACKENDS ---
-# These files must exist in your repository with these exact names
 try:
     import surfacelaid_psi_backend as surface_backend
     from trenched_psi_backend import Trenched_PSI_Backend
@@ -124,50 +122,6 @@ if analysis_mode == "Surface Laid Pipeline":
         with c2:
             st.dataframe(df_results[df_results["Surface"] == "PET"].drop(columns=["Surface"]), use_container_width=True)
 
-        # --- PLOTTING ---
-        st.subheader("Resistance Profiles (Graphs)")
-        def plot_surface_graphs(surface_name):
-            fig_ax = go.Figure()
-            fig_lat = go.Figure()
-            colors = {"P5": "green", "P50": "blue", "P95": "red"}
-            
-            subset = [r for r in results["profiles"] if r["Surface"] == surface_name]
-            for res in subset:
-                est = res["Estimate"]
-                color = colors.get(est, "black")
-                
-                # Axial
-                ax = res["Axial"]
-                fig_ax.add_trace(go.Scatter(
-                    x=[0, ax["BreakDisp"], ax["ResDisp"], ax["ResDisp"]*1.5],
-                    y=[0, ax["BreakForce"], ax["ResForce"], ax["ResForce"]],
-                    mode='lines+markers', name=est, line=dict(color=color)
-                ))
-                # Lateral
-                lat = res["Lateral"]
-                fig_lat.add_trace(go.Scatter(
-                    x=[0, lat["BreakDisp"], lat["ResDisp"], lat["ResDisp"]*1.5],
-                    y=[0, lat["BreakForce"], lat["ResForce"], lat["ResForce"]],
-                    mode='lines+markers', name=est, line=dict(color=color)
-                ))
-            
-            fig_ax.update_layout(title=f"{surface_name} Axial", xaxis_title="Disp (mm)", yaxis_title="Force (kN/m)", height=350)
-            fig_lat.update_layout(title=f"{surface_name} Lateral", xaxis_title="Disp (mm)", yaxis_title="Force (kN/m)", height=350)
-            return fig_ax, fig_lat
-
-        t1, t2 = st.tabs(["Concrete Graphs", "PET Graphs"])
-        with t1:
-            f1, f2 = plot_surface_graphs("Concrete")
-            c1, c2 = st.columns(2)
-            c1.plotly_chart(f1, use_container_width=True)
-            c2.plotly_chart(f2, use_container_width=True)
-        with t2:
-            f3, f4 = plot_surface_graphs("PET")
-            c3, c4 = st.columns(2)
-            c3.plotly_chart(f3, use_container_width=True)
-            c4.plotly_chart(f4, use_container_width=True)
-
-
 # =========================================================
 # MODE 2: TRENCHED ANALYSIS
 # =========================================================
@@ -181,7 +135,7 @@ elif analysis_mode == "Trenched Pipeline":
     tp = st.sidebar.number_input("Wall Thickness (tp) [m]", value=0.015, format="%.3f", key="t_tp")
     h_trench = st.sidebar.number_input("Trench Height (H) [m]", value=1.00, format="%.2f", key="t_h")
 
-    # Soil Inputs in Main Window for better layout
+    # Soil Inputs in Main Window
     st.subheader("2. Soil Parameters (P5 / P50 / P95)")
     col1, col2, col3 = st.columns(3)
 
@@ -230,20 +184,11 @@ elif analysis_mode == "Trenched Pipeline":
         st.divider()
         st.metric("Effective Vertical Force (V)", f"{v_eff:.2f} kN/m")
         
-        # Display Table (Transposed for readability)
+        # Display Table
         st.subheader("Resistance Summary")
         df_display = df_results.set_index("Category").T
         st.dataframe(df_display, use_container_width=True)
-        
-        # Chart
-        st.subheader("Resistance Comparison")
-        st.bar_chart(df_results.set_index("Category"))
 
 # --- FOOTER ---
 st.markdown("---")
 st.markdown("**Developed by Sivamanikanta Kumar** | Geotechnical Engineer")
-
-
-
-
-
