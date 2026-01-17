@@ -5,7 +5,7 @@ def run_psi_analysis(inputs):
     Performs Undrained Pipe-Soil Interaction analysis.
     Calculates Axial and Lateral resistance profiles for given soil and pipe parameters.
     """
-    # --- 1. EXTRACT INPUTS ---
+    # [cite_start]--- 1. EXTRACT INPUTS [cite: 57] ---
     Dop = inputs['Dop']
     tp = inputs['tp']
     Z = inputs['Z']
@@ -15,27 +15,28 @@ def run_psi_analysis(inputs):
     alpha = inputs['alpha']
     rate = inputs['rate']
     
-    # Soil Weight correction (Bulk - 10.05 for Submerged)
+    # [cite_start]Soil Weight correction (Bulk - 10.05 for Submerged) [cite: 58]
     Sub_wt = inputs['gamma_bulk'] - 10.05 
     Su_passive = inputs['Su_passive'] 
 
-    # --- 2. WEIGHT CALCULATIONS ---
+    # [cite_start]--- 2. WEIGHT CALCULATIONS [cite: 58] ---
     Dip = Dop - 2 * tp
     g = 9.8
     Klay = 2.0
     
-    # Constants: 7850 (Steel), 1000 (Fluid), 1025 (Seawater)
+    # [cite_start]Constants: 7850 (Steel), 1000 (Fluid), 1025 (Seawater) [cite: 58, 59]
     Wp = (np.pi * (Dop**2 - Dip**2) * 7850) / 4
     Wcon = (np.pi * Dip**2 * 1000) / 4
     Wb = (np.pi * Dop**2 * 1025) / 4
     
+    # [cite_start]Flooded weight (Wpf) and Installation weight (Wpins) [cite: 59]
     Wpf = ((Wp + Wcon - Wb) * g) / 1000.0
     Wpins = (np.pi * (Dop**2 - Dip**2) * (7850 - 1025)) / 4
     
-    # Effective Vertical Force V
+    # [cite_start]Effective Vertical Force V [cite: 59]
     V = max((Wpins * Klay * g / 1000.0), Wpf)
 
-    # --- 3. GEOMETRY & VERTICAL RESISTANCE (Qv) ---
+    # [cite_start]--- 3. GEOMETRY & VERTICAL RESISTANCE (Qv) [cite: 60, 61] ---
     # Logic for Penetrated Area (Abm)
     if Z < Dop / 2:
         val = Dop * Z - Z**2
@@ -49,7 +50,7 @@ def run_psi_analysis(inputs):
         B = Dop
         Abm = (np.pi * Dop**2 / 8) + Dop * (Z - Dop / 2)
         
-    # Vertical Bearing Capacity Qv
+    # [cite_start]Vertical Bearing Capacity Qv [cite: 61, 62]
     if Dop > 0:
         term1 = 6 * (Z / Dop)**0.25
         term2 = 3.4 * (10 * Z / Dop)**0.5
@@ -57,7 +58,7 @@ def run_psi_analysis(inputs):
     else:
         Qv = 0
 
-    # --- 4. WEDGING & LATERAL RESISTANCE ---
+    # [cite_start]--- 4. WEDGING & LATERAL RESISTANCE [cite: 62, 63] ---
     # Wedging Factor (zeta)
     cosVal = 1 - Z / (Dop / 2)
     cosVal = max(-1.0, min(1.0, cosVal)) # Safety clamp
@@ -66,10 +67,10 @@ def run_psi_analysis(inputs):
     denom = beta + np.sin(beta) * np.cos(beta)
     zeta = (2 * np.sin(beta)) / denom if denom != 0 else 1.0
     
-    # Lateral Remaining Resistance (Passive Soil)
+    # [cite_start]Lateral Remaining Resistance (Passive Soil) [cite: 63]
     Fl_remain = Z * rate * (2 * Su_passive + 0.5 * Sub_wt * Z)
 
-    # --- 5. PREPARE RESULTS ---
+    # [cite_start]--- 5. PREPARE RESULTS [cite: 63, 64] ---
     results = {
         "metrics": {
             "Wp": Wp, "Wpf": Wpf, "V": V, 
@@ -79,32 +80,32 @@ def run_psi_analysis(inputs):
         "profiles": []
     }
 
-    # --- 6. CALCULATE RESISTANCE PROFILES ---
+    # [cite_start]--- 6. CALCULATE RESISTANCE PROFILES [cite: 64] ---
     surfaces = ["Concrete", "PET"]
     estimates = ["P5", "P50", "P95"]
     
     for surf_name in surfaces:
         for est in estimates:
-            # Retrieve SSR/Prem inputs dynamically
+            # [cite_start]Retrieve SSR/Prem inputs dynamically [cite: 65]
             key_ssr = f"{surf_name}_{est}_SSR"
             key_prem = f"{surf_name}_{est}_Prem"
             
             SSR = inputs[key_ssr]
             Prem = inputs[key_prem]
             
-            # Axial Breakout
+            # [cite_start]Axial Breakout [cite: 66]
             Abrk = alpha * SSR * (OCR**Prem) * zeta * rate * V
             
-            # Axial Residual
+            # [cite_start]Axial Residual [cite: 66]
             Ares = (1.0 / St) * Abrk
             
-            # Lateral Breakout (Friction + Passive)
+            # [cite_start]Lateral Breakout (Friction + Passive) [cite: 67]
             Lbrk = (alpha * SSR * (OCR**Prem) * rate * V) + Fl_remain
             
-            # Lateral Residual
+            # [cite_start]Lateral Residual [cite: 67]
             Lres_raw = (0.32 + 0.8 * (Z / Dop)**0.8) * V if Dop > 0 else 0
             
-            # Apply safety factors to Residual
+            # [cite_start]Apply safety factors to Residual [cite: 68, 69]
             if est == "P5":
                 Lres = Lres_raw / 1.5
             elif est == "P95":
@@ -112,7 +113,7 @@ def run_psi_analysis(inputs):
             else:
                 Lres = Lres_raw
                 
-            # Displacements Calculation
+            # [cite_start]Displacements Calculation [cite: 69, 70, 71, 72]
             Dop_mm = Dop * 1000.0
             
             if est == "P5":
@@ -131,7 +132,7 @@ def run_psi_analysis(inputs):
                 Yb = (0.1 + 0.7 * (Z/Dop)) * Dop_mm
                 Yr = 2.8 * Dop_mm
                 
-            # Append to results list
+            # [cite_start]Append to results list [cite: 73]
             results["profiles"].append({
                 "Surface": surf_name,
                 "Estimate": est,
