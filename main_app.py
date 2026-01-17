@@ -199,4 +199,46 @@ elif analysis_mode == "Trenched Pipeline":
         gbulk_p50 = st.number_input("Gamma Bulk", value=17.0, key="g_p50")
         sbnb_p50 = st.number_input("Su Backfill Non-Brittle", value=3.0, key="sbnb_p50")
         sbo_p50 = st.number_input("Su Breakout", value=4.0, key="sbo_p50")
-        sba_p50 = st.number_input("Su Backfill Axial", value=3.5, key
+        sba_p50 = st.number_input("Su Backfill Axial", value=3.5, key="sba_p50")
+
+    with col3:
+        st.markdown("**P95 (High)**")
+        alpha_p95 = st.number_input("Alpha", value=0.8, key="a_p95")
+        gbulk_p95 = st.number_input("Gamma Bulk", value=18.0, key="g_p95")
+        sbnb_p95 = st.number_input("Su Backfill Non-Brittle", value=5.0, key="sbnb_p95")
+        sbo_p95 = st.number_input("Su Breakout", value=6.0, key="sbo_p95")
+        sba_p95 = st.number_input("Su Backfill Axial", value=5.0, key="sba_p95")
+
+    # Consolidate inputs
+    soil_inputs = {
+        'alpha': [alpha_p5, alpha_p50, alpha_p95],
+        'g_bulk': [gbulk_p5, gbulk_p50, gbulk_p95],
+        's_bnb': [sbnb_p5, sbnb_p50, sbnb_p95],
+        's_bo': [sbo_p5, sbo_p50, sbo_p95],
+        's_ba': [sba_p5, sba_p50, sba_p95]
+    }
+
+    # --- EXECUTE ---
+    if st.button("Run Trenched Analysis", type="primary"):
+        # Initialize Backend
+        model = Trenched_PSI_Backend(dop, tp, h_trench)
+        
+        # Run Calculation
+        v_eff, df_results = model.run_analysis(soil_inputs)
+        
+        # --- OUTPUTS ---
+        st.divider()
+        st.metric("Effective Vertical Force (V)", f"{v_eff:.2f} kN/m")
+        
+        # Display Table (Transposed for readability)
+        st.subheader("Resistance Summary")
+        df_display = df_results.set_index("Category").T
+        st.dataframe(df_display, use_container_width=True)
+        
+        # Chart
+        st.subheader("Resistance Comparison")
+        st.bar_chart(df_results.set_index("Category"))
+
+# --- FOOTER ---
+st.markdown("---")
+st.markdown("**Developed by Sivamanikanta Kumar** | Geotechnical Engineer")
